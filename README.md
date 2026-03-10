@@ -250,3 +250,77 @@ Seu repositório deve conter:
   - Decisões técnicas
 
 Boa sorte 🚀
+
+---
+
+# 🛠️ Como Executar o Projeto Completo
+
+## Desenvolvimento Local (sem Docker)
+
+### Backend
+
+```bash
+cd backend
+
+# Setup
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync
+
+# Variáveis de ambiente
+cp ../.env.example ../.env
+
+# Rodar migrações
+uv run alembic upgrade head
+
+# Iniciar API
+uv run uvicorn main:app --reload
+
+# Em outro terminal, iniciar worker
+uv run celery -A celery_app worker --loglevel=info
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Setup
+npm install
+cp .env.example .env
+
+# Desenvolvimento
+npm run dev
+
+# Testes
+npm run test
+```
+
+## Com Docker Compose
+
+```bash
+# Copiar variáveis
+cp .env.example .env
+
+# Iniciar todos os serviços
+docker-compose up -d
+
+# Rodar migrações
+docker-compose exec app uv run alembic upgrade head
+
+# Acessar
+# Frontend: http://localhost:3000
+# API: http://localhost:8000
+# Docs: http://localhost:8000/docs
+```
+
+## Decisões Técnicas
+
+**Backend**: FastAPI + SQLAlchemy + Celery + Redis
+- Transações para prevenir overlaps
+- Padrão Outbox para notificações assíncronas
+- JWT para autenticação
+
+**Frontend**: React + Vite + Axios
+- Validação client-side
+- Loading states e tratamento de erros
+- Responsivo
