@@ -1,0 +1,92 @@
+.navigation {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+}
+
+.nav-logo {
+  font-size: 24px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  gap: 30px;
+  align-items: center;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #333;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 5px;
+}
+
+.nav-link:hover {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.nav-link-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.nav-link-primary:hover {
+  color: white;
+  background: linear-gradient(135deg, #5568d3 0%, #653a91 100%);
+}
+
+.nav-logout {
+  background: #e74c3c;
+  color: white;
+}
+
+.nav-logout:hover {
+  background: #c0392b;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .nav-menu {
+    gap: 15px;
+  }
+
+  .nav-link {
+    padding: 5px 10px;
+    font-size: 14px;
+  }
+
+  .nav-logo {
+    font-size: 18px;
+  }
+}
