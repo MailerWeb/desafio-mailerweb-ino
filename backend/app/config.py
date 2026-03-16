@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 import logging
 
-load_dotenv(os.getenv("API_KEY"))
+load_dotenv(".env")
 
 logger = logging.getLogger("LOOGER")
 
