@@ -13,8 +13,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("MEETING-APP")
 
-config = Config()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,6 +44,8 @@ async def lifespan(app: FastAPI):
     await app.state.http_client.aclose()
     logger.info("Cliente HTTP encerrado com segurança.")
 
+
+config = Config()
 
 app = FastAPI(title=config.APP_NAME, debug=config.DEBUG, lifespan=lifespan)
 

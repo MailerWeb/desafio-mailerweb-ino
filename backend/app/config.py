@@ -3,24 +3,26 @@ from dotenv import load_dotenv
 
 import logging
 
-load_dotenv(".env")
 
 logger = logging.getLogger("LOOGER")
 
+load_dotenv(".env")
+
 
 class Config:
+
     def __init__(self):
         self.DEBUG = os.getenv("DEBUG")
 
         self.APP_NAME = os.getenv("APP_NAME")
-        self.SECRET_KEY = os.getenv("SECRET_KEY")
+        self.API_KEY = os.getenv("API_KEY")
 
-        if not self.SECRET_KEY:
+        if not self.API_KEY:
             if os.getenv("DEBUG") == "True":
                 logger.warning(
                     "AVISO: Chave de acesso não definida e modo DEBUG == True! Usando chave de desenvolvimento."
                 )
-                self.SECRET_KEY = "super_secret_key"
+                self.API_KEY = "super_secret_key"
             else:
                 raise ValueError(
                     "ERRO CRÍTICO: chave de acesso não definida no ambiente!"
@@ -31,3 +33,5 @@ class Config:
         self.DB_HOST = os.getenv("DB_HOST")
         self.DB_PORT = os.getenv("DB_PORT")
         self.DB_NAME = os.getenv("DB_NAME")
+
+        self.REACT_PUBLIC_API_URL = os.getenv("REACT_PUBLIC_API_URL")
