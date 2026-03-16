@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from ..models.user import User
+
 user_router = APIRouter(prefix="/user")
 
 
@@ -9,5 +11,5 @@ def register_user():
 
 
 @user_router.get("/register")
-def register_user():
-    return "registrando usuário"
+def register_user(user: User):
+    return user
