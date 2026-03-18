@@ -14,6 +14,8 @@ from typing import Annotated
 
 from dotenv import load_dotenv
 
+from datetime import timedelta, datetime, timezone
+
 import logging
 
 from ..models import UserDB, Token, TokenData
@@ -30,12 +32,18 @@ logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-password_helper = PasswordHash.recommended()
+password_hash = PasswordHash.recommended()
 
 
-def get_user(db: Session, username: str):
+def get_user(username_email: str, db: Session = Depends(get_db)):
     try:
-        user = db.query(UserDB).filter(UserDB.username == username).first()
+        user = (
+            db.query(UserDB)
+            .filter(
+                (UserDB.username == username_email) | (UserDB.email == username_email)
+            )
+            .first()
+        )
 
         if not user:
             logger.info("Usuário não encontrado. Retornando 'None'.")
@@ -43,7 +51,7 @@ def get_user(db: Session, username: str):
 
         return UserInDB.model_validate(user)
     except SQLAlchemyError as e:
-        logger.error(f"Erro ao buscar usuário de username {username}")
+        logger.error(f"Erro ao buscar usuário de username {username_email}")
         raise e
 
 
@@ -82,3 +90,40 @@ async def get_current_active_user(
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+async def authenticate_user(
+    username: str,
+    password: str,
+    db: Session = Depends(get_db),
+):
+    user = get_user(db, username)
+    if not user or not verify_password(password, user.hashed_password):
+        return False
+
+    return user
+
+
+async def create_access_token(
+    data: dict,
+    expires_token: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+):
+    encode = data.copy()
+
+    if expires_token:
+        expire = datetime.now(timezone.utc) + expires_token
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+    encode.update({"exp": expire})
+    encode_jwt = jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    return encode_jwt
+
+
+def verify_password(plain_password, hashed_password):
+    return password_hash.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password):
+    return password_hash.hash(password)

@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Form, Depends
+from fastapi import APIRouter, Form, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+
+from sqlalchemy.orm import Session
 
 from typing import Annotated
 
 from ..schemas.user import User
 from ..schemas.form_login import FormLogin
+from ..services import get_user, verify_password, create_access_token
+from ..db import get_db
 
 user_router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -12,11 +16,24 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 @user_router.post("/login")
-async def register_user(
-    user_login: Annotated[FormLogin, Form()],
-    token: Annotated[str, Depends(oauth2_scheme)],
+async def login_user(
+    user_login: Annotated[FormLogin, Form()], db: Session = Depends(get_db)
 ):
-    return {"token": token, "login": user_login}
+    user = get_user(user_login.username_email)
+
+    if not user or not verify_password(user_login.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="E-mail/Usuário ou senha incorretos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token({"sub": user.username})
+
+    return {
+        "token": access_token,
+        "token_type": "bearer",
+    }
 
 
 @user_router.post("/register")
