@@ -7,6 +7,8 @@ import httpx
 
 from .routes import ROUTERS
 from .config import Config
+from .db import engine, Base, SQLALCHEMY_DATABASE_URL
+from .models import *
 
 import logging
 
@@ -29,10 +31,12 @@ async def lifespan(app: FastAPI):
 
     logger.info("Iniciando conexão com os bancos de dados...")
     try:
+        Base.metadata.create_all(bind=engine)
         logger.info("PostgreSQL conectado com sucesso!")
 
     except Exception as e:
         logger.error(f"Falha ao conectar ao PostgreSQL: {e}")
+        logger.warning(f"URL: {SQLALCHEMY_DATABASE_URL}")
 
     yield
 
