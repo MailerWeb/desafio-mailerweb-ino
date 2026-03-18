@@ -12,4 +12,4 @@ class UserDB(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    bookings = relationship("Booking", back_populates="user")
+    bookings = relationship("BookingDB", back_populates="user")

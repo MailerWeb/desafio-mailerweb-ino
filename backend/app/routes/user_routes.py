@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
@@ -17,9 +17,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @user_router.post("/login")
 async def login_user(
-    user_login: Annotated[FormLogin, Form()], db: Session = Depends(get_db)
+    user_login: Annotated[FormLogin, Depends()], db: Session = Depends(get_db)
 ):
-    user = get_user(user_login.username_email)
+    user = get_user(db, user_login.username_email)
 
     if not user or not verify_password(user_login.password, user.hashed_password):
         raise HTTPException(

@@ -25,17 +25,17 @@ from ..db import get_db
 load_dotenv("../.env")
 
 SECRET_KEY = os.getenv("API_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 logger = logging.getLogger(__name__)
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
 password_hash = PasswordHash.recommended()
 
 
-def get_user(username_email: str, db: Session = Depends(get_db)):
+def get_user(db: Session, username_email: str):
     try:
         user = (
             db.query(UserDB)
@@ -72,9 +72,9 @@ async def get_current_user(
             raise credential_exception
 
         token_data = TokenData(username=username)
-    except InvalidTokenError as e:
+    except InvalidTokenError:
         logger.error("Token inválido!")
-        raise e
+        raise credential_exception
 
     user = get_user(db, token_data.username)
 
@@ -93,9 +93,9 @@ async def get_current_active_user(
 
 
 async def authenticate_user(
+    db: Session,
     username: str,
     password: str,
-    db: Session = Depends(get_db),
 ):
     user = get_user(db, username)
     if not user or not verify_password(password, user.hashed_password):
@@ -104,7 +104,7 @@ async def authenticate_user(
     return user
 
 
-async def create_access_token(
+def create_access_token(
     data: dict,
     expires_token: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
 ):
