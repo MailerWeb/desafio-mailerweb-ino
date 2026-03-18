@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
+from typing import List
 
 
 class BookingStatus(str, Enum):
@@ -25,6 +26,22 @@ class BookingCreate(BaseModel):
     start_at: datetime
     end_at: datetime
     status: BookingStatus = BookingStatus.ACTIVE
+    participants: List[str]
+
+    @model_validator(mode="after")
+    def validate_time(self) -> "BookingCreate":
+        if self.start_at >= self.end_at:
+            raise ValueError(
+                "Horários de início e fim inválidos. O horário de início deve ser menor que o horário de fim."
+            )
+        elif (self.end_at - self.start_at) < timedelta(minutes=15) or (
+            (self.end_at - self.start_at) > timedelta(hours=8)
+        ):
+            raise ValueError(
+                "Tempo de duração deve ser maior ou igual a 15 min ou menor que 8 horas"
+            )
+
+        return self
 
 
 class BookingResponse(BookingCreate):
