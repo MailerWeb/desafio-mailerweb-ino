@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from typing import Annotated
 
-from ..models.user import User
+from ..schemas.user import User
 from ..models.form_login import FormLogin
 
 user_router = APIRouter(prefix="/user")

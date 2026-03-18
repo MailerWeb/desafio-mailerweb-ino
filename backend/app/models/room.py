@@ -1,7 +1,14 @@
-from pydantic import BaseModel
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
+from app.db.db import Base
 
 
-class Room(BaseModel):
-    name: str
-    key: str | None = None
-    capacity: int
+class RoomDB(Base):
+    __tablename__ = "rooms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    key = Column(String, nullable=True)
+    capacity = Column(Integer, nullable=False)
+
+    bookings = relationship("BookingDB", back_populates="room")

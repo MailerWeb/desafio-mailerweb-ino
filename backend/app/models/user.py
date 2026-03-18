@@ -5,18 +5,6 @@ from sqlalchemy.orm import relationship
 from ..db.db import Base
 
 
-class User(BaseModel):
-    name: str
-    surname: str
-    password: str
-    email: str
-    role: str
-
-
-class UserInDB(User):
-    hashed_password: str
-
-
 class UserDB(Base):
     __tablename__ = "users"
 
