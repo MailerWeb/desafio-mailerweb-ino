@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Optional
 
 
-class OutboxStatus(str, Enum):
+class OutboxEventStatus(str, Enum):
     PENDING = "PENDING"
     PROCESSED = "PROCESSED"
     FAILED = "FAILED"
@@ -26,7 +26,7 @@ class OutboxEventResponse(BaseModel):
     aggregate_type: str
     aggregate_id: int
     event_type: str
-    status: OutboxStatus
+    status: OutboxEventStatus
     payload: dict
     retries: int
     created_at: datetime

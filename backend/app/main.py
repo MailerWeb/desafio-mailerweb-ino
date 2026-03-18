@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
         logger.info("PostgreSQL conectado com sucesso!")
 
     except Exception as e:
-        logger.error(f"Falha ao conectar no PostgreSQL: {e}")
+        logger.error(f"Falha ao conectar ao PostgreSQL: {e}")
 
     yield
 
