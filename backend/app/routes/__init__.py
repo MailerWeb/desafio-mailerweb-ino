@@ -1,3 +1,4 @@
-from .user_routes import user_router
+from .user_routes import *
+from .booking_routes import *
 
-ROUTERS = [user_router]
+ROUTERS = [user_router, booking_router]

@@ -6,7 +6,7 @@ from typing import Annotated
 from ..schemas.user import User
 from ..schemas.form_login import FormLogin
 
-user_router = APIRouter(prefix="/user")
+user_router = APIRouter(prefix="/users", tags=["Users"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
