@@ -1,3 +1,4 @@
+assyncio
 fastapi[standard]
 fastapi-cache2[redis]
 httpx==0.28.1
