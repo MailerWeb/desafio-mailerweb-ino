@@ -4,7 +4,9 @@ fastapi-cache2[redis]
 httpx==0.28.1
 numpy==2.4.1
 psycopg2-binary==2.9.11
+pwdlib[argon2]
 pydantic==2.12.5
+pyjwt==2.12.1
 python-dotenv==1.2.1
 pytest==9.0.2
 redis==7.2.1
