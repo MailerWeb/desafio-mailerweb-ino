@@ -1,34 +1,19 @@
-from pydantic import BaseModel
-
-from datetime import datetime
-from enum import Enum
-
-
-class BookingStatus(str, Enum):
-    ACTIVE = "ACTIVE"
-    CANCELED = "CANCELED"
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from app.db.db import Base
 
 
-class Booking(BaseModel):
-    title: str
-    room: int
-    user: int
-    start: datetime
-    end: datetime
-    status: str
+class BookingDB(Base):
+    __tablename__ = "bookings"
 
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    start_at = Column(DateTime, nullable=False)
+    end_at = Column(DateTime, nullable=False)
+    status = Column(String, default="ACTIVE")
 
-class BookingCreate(BaseModel):
-    title: str
-    room_id: int
-    user_id: int
-    start_at: datetime
-    end_at: datetime
-    status: BookingStatus = BookingStatus.ACTIVE
+    room_id = Column(Integer, ForeignKey("rooms.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
-
-class BookingResponse(BookingCreate):
-    id: int
-
-    class Config:
-        from_attributes = True
+    room = relationship("RoomDB", back_populates="bookings")
+    user = relationship("UserDB", back_populates="bookings")

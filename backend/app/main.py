@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     yield
 
     logger.info("Encerrando conexões...")
-    config.client.close()
+    # config.client.close()
     logger.info("Conexões encerradas.")
 
     logger.info("Encerrando recursos...")
