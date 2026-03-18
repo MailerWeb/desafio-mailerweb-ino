@@ -63,5 +63,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 for router in ROUTERS:
     app.include_router(router)
