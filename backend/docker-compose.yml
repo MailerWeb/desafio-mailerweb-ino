@@ -1,0 +1,58 @@
+services:
+    postgres:
+        image: postgres:13.4
+        container_name: backend_postgres
+        environment:
+            POSTGRES_USER: ${USER_DB}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: backend
+        ports:
+            - "15432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        networks:
+            - backend_net
+
+    pgadmin:
+        image: dpage/pgadmin4
+        container_name: backend_pgadmin
+        environment:
+            PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+            PGADMIN_DEFAULT_PASSWORD: ${PAGADMIN_PASSOWORD}
+        ports:
+            - "16543:80"
+        depends_on:
+            - postgres
+        networks:
+            - backend_net
+
+    rabbitmq:
+        image: rabbitmq:3-management
+        container_name: backend_rabbitmq
+        environment:
+            - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+            - RABBITMQ_DEFAULT_PASS=${RABBIT_PASS}
+        ports:
+            - "${RABBIT_PORT}:5672"
+            - "${RABBIT_MANAGEMENT_PORT}:15672"
+        volumes:
+            - rabbitmq_data:/var/lib/rabbitmq
+        networks:
+            - backend_net
+
+    mailhog:
+        image: mailhog/mailhog
+        container_name: backend_mailhog
+        ports:
+            - "1025:1025"
+            - "8025:8025"
+        networks:
+            - backend_net
+
+volumes:
+    postgres_data:
+    rabbitmq_data:
+
+networks:
+    backend_net:
+        driver: bridge
