@@ -7,7 +7,7 @@ import httpx
 
 from .routes import ROUTERS
 from .config import Config
-from .db import engine, Base, SQLALCHEMY_DATABASE_URL
+from .db import engine, Base, get_db
 from .models import *
 
 import logging
@@ -36,13 +36,8 @@ async def lifespan(app: FastAPI):
 
     except Exception as e:
         logger.error(f"Falha ao conectar ao PostgreSQL: {e}")
-        logger.warning(f"URL: {SQLALCHEMY_DATABASE_URL}")
 
     yield
-
-    logger.info("Encerrando conexões...")
-    # config.client.close()
-    logger.info("Conexões encerradas.")
 
     logger.info("Encerrando recursos...")
     await app.state.http_client.aclose()

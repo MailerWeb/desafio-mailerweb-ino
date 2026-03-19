@@ -17,7 +17,6 @@ class UserInDB(User):
 
 class UserCreate(User):
     password: str
-    role: str = "user"
 
 
 class UserResponse(User):
