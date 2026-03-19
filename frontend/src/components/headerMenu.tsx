@@ -13,7 +13,6 @@ import LogoutIcon from "@mui/icons-material/Logout";
 
 const HeaderMenu = () => {
     const { logout } = useAuth();
-    const navigate = useNavigate();
 
     return (
         <AppBar position="sticky" elevation={2}>

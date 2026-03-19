@@ -45,9 +45,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { access_token, user: userData } = response.data;
 
-        console.log(access_token);
-        console.log(userData);
-
         localStorage.setItem("token", access_token);
         localStorage.setItem("user", JSON.stringify(userData));
 

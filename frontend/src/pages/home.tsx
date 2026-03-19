@@ -1,23 +1,5 @@
-import { useEffect, useState } from "react";
-import {
-    Container,
-    Typography,
-    Box,
-    SpeedDial,
-    SpeedDialIcon,
-    SpeedDialAction,
-    Pagination,
-    Stack,
-} from "@mui/material";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import FolderIcon from "@mui/icons-material/Folder";
-import TaskForm from "../components/taskForm";
-import serviceAPI from "../services/mainService";
-import type { Task, Category } from "../type/task";
+import { Container, Typography, Box } from "@mui/material";
 import HeaderMenu from "../components/headerMenu";
-import CategoryForm from "../components/categoryForm";
-import FilterStatus from "../components/filterStatus";
-import TasksList from "../components/tasksList";
 
 const HomePage = () => {
     return (

@@ -14,6 +14,8 @@ import serviceAPI from "../services/mainService";
 const RegisterForm = () => {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
+    const [name, setName] = useState("");
+    const [surname, setSurname] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -36,6 +38,8 @@ const RegisterForm = () => {
             await serviceAPI.post("/users/register/", {
                 username,
                 email,
+                name,
+                surname,
                 password,
             });
 
@@ -118,6 +122,34 @@ const RegisterForm = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    sx={{
+                        "& input:-webkit-autofill": {
+                            WebkitBoxShadow: "0 0 0 100px white inset",
+                            WebkitTextFillColor: "#000",
+                        },
+                    }}
+                />
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="Nome"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    sx={{
+                        "& input:-webkit-autofill": {
+                            WebkitBoxShadow: "0 0 0 100px white inset",
+                            WebkitTextFillColor: "#000",
+                        },
+                    }}
+                />
+                <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="Sobrenome"
+                    value={surname}
+                    onChange={(e) => setSurname(e.target.value)}
                     sx={{
                         "& input:-webkit-autofill": {
                             WebkitBoxShadow: "0 0 0 100px white inset",
