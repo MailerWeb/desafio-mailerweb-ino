@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from sqlalchemy.orm import Session
@@ -23,11 +23,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @user_router.post("/login")
 async def login_user(
-    user_login: Annotated[FormLogin, Depends()], db: Session = Depends(get_db)
+    username_email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db),
 ):
-    user = get_user(db, user_login.username_email)
+    user = get_user(db, username_email)
 
-    if not user or not verify_password(user_login.password, user.hashed_password):
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="E-mail/Usuário ou senha incorretos",
@@ -37,8 +39,12 @@ async def login_user(
     access_token = create_access_token({"sub": user.username})
 
     return {
-        "token": access_token,
+        "access_token": access_token,
         "token_type": "bearer",
+        "user": {
+            "username": user.username,
+            "email": user.email,
+        },
     }
 
 
