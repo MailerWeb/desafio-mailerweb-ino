@@ -67,8 +67,27 @@ jobs:
       - name: Install dependencies
         run: uv pip install --system -e ".[dev]"
 
+      - name: Lint (ruff)
+        run: ruff check app tests
+
       - name: Run Alembic migrations
         run: alembic upgrade head
+
+      - name: Create test database
+        run: |
+          python - <<'EOF'
+          import asyncio
+          import asyncpg
+
+          async def main():
+              conn = await asyncpg.connect(
+                  "postgresql://test:test@localhost:5432/meetings"
+              )
+              await conn.execute("CREATE DATABASE test_meetings")
+              await conn.close()
+
+          asyncio.run(main())
+          EOF
 
       - name: Run tests
         run: pytest --asyncio-mode=auto -v --cov=app --cov-report=term-missing

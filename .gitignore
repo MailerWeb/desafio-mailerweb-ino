@@ -31,3 +31,4 @@ dist/
 .coverage
 htmlcov/
 .pytest_cache/
+backend/celerybeat-schedule

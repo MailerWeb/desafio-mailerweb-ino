@@ -1,0 +1,60 @@
+// Meeting Room Booking System
+// https://dbdiagram.io
+
+Table users {
+  id        uuid      [pk, default: `gen_random_uuid()`]
+  name      varchar(255) [not null]
+  email     varchar(255) [not null, unique]
+  password_hash varchar(255) [not null]
+  role      varchar(20)  [not null, default: 'MEMBER', note: 'OWNER | MEMBER']
+  is_active boolean      [not null, default: true]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table rooms {
+  id         uuid         [pk, default: `gen_random_uuid()`]
+  name       varchar(255) [not null, unique]
+  capacity   integer      [not null, note: 'CHECK capacity > 0']
+  created_at timestamptz  [default: `now()`]
+}
+
+Table bookings {
+  id         uuid         [pk, default: `gen_random_uuid()`]
+  title      varchar(255) [not null]
+  room_id    uuid         [not null, ref: > rooms.id]
+  user_id    uuid         [not null, ref: > users.id]
+  start_at   timestamptz  [not null]
+  end_at     timestamptz  [not null]
+  status     varchar(20)  [not null, default: 'active', note: 'active | cancelled']
+  created_at timestamptz  [default: `now()`]
+  updated_at timestamptz  [default: `now()`]
+
+  note: '''
+    EXCLUDE USING gist (
+      room_id WITH =,
+      tstzrange(start_at, end_at, "[)") WITH &&
+    ) WHERE (status = "active")
+    — impede overlap de reservas ativas na mesma sala
+  '''
+}
+
+Table booking_participants {
+  id         uuid         [pk, default: `gen_random_uuid()`]
+  booking_id uuid         [not null, ref: > bookings.id]
+  email      varchar(255) [not null]
+  name       varchar(255)
+}
+
+Table outbox_events {
+  id               uuid        [pk, default: `gen_random_uuid()`]
+  event_type       varchar(50) [not null, note: 'BOOKING_CREATED | BOOKING_UPDATED | BOOKING_CANCELED']
+  booking_id       uuid        [not null, ref: > bookings.id]
+  payload          jsonb       [not null, note: 'snapshot completo: título, sala, horário, participantes']
+  status           varchar(20) [not null, default: 'pending', note: 'pending | processed | failed']
+  attempts         integer     [not null, default: 0]
+  max_attempts     integer     [not null, default: 5]
+  idempotency_key  uuid        [not null, unique]
+  processed_at     timestamptz
+  created_at       timestamptz [default: `now()`]
+}
