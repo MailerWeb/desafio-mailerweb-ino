@@ -31,7 +31,9 @@ class OutboxEvent:
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def can_retry(self) -> bool:
-        return self.status != OutboxStatus.PROCESSED and self.attempts < self.max_attempts
+        return (
+            self.status != OutboxStatus.PROCESSED and self.attempts < self.max_attempts
+        )
 
     def mark_processed(self) -> None:
         self.status = OutboxStatus.PROCESSED

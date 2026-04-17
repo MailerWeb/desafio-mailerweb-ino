@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from app.domain.exceptions import BookingDurationError, InvalidDateError
 

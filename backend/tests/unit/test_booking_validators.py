@@ -3,7 +3,11 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.domain.exceptions import BookingDurationError, InvalidDateError
-from app.domain.validators import validate_booking, validate_booking_dates, validate_booking_duration
+from app.domain.validators import (
+    validate_booking,
+    validate_booking_dates,
+    validate_booking_duration,
+)
 
 NOW = datetime.now(tz=timezone.utc)
 

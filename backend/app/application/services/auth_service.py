@@ -3,10 +3,14 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 
 from app.application.interfaces.user_repository import AbstractUserRepository
-from app.application.schemas.auth import LoginResponse, RegisterRequest, UserOut
-from app.infrastructure.repositories.sqlalchemy_user_repo import UserRepositoryDep
-from app.infrastructure.security.jwt import create_access_token, get_password_hash, verify_password
+from app.application.schemas.auth import LoginResponse, RegisterRequest
 from app.infrastructure.database.models import UserModel
+from app.infrastructure.repositories.sqlalchemy_user_repo import UserRepositoryDep
+from app.infrastructure.security.jwt import (
+    create_access_token,
+    get_password_hash,
+    verify_password,
+)
 
 
 class AuthService:

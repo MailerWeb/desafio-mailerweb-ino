@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-import pytest
-
 from app.domain.entities.booking import Booking, BookingStatus
-from app.domain.entities.outbox_event import OutboxEvent, OutboxStatus, EventType
+from app.domain.entities.outbox_event import EventType, OutboxEvent, OutboxStatus
 
 NOW = datetime.now(tz=timezone.utc)
 

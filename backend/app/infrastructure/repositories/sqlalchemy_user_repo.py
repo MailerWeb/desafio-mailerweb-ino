@@ -31,7 +31,9 @@ class SQLAlchemyUserRepository(AbstractUserRepository):
         return user
 
 
-def get_user_repository(session: AsyncSession = Depends(get_db)) -> SQLAlchemyUserRepository:
+def get_user_repository(
+    session: AsyncSession = Depends(get_db),
+) -> SQLAlchemyUserRepository:
     return SQLAlchemyUserRepository(session)
 
 

@@ -35,7 +35,10 @@ class TestLogin:
         await db_client.post("/api/auth/register", json=user_payload)
         response = await db_client.post(
             "/api/auth/login",
-            data={"username": user_payload["email"], "password": user_payload["password"]},
+            data={
+                "username": user_payload["email"],
+                "password": user_payload["password"],
+            },
         )
         assert response.status_code == 200
         data = response.json()
@@ -63,7 +66,10 @@ class TestMe:
         await db_client.post("/api/auth/register", json=user_payload)
         login = await db_client.post(
             "/api/auth/login",
-            data={"username": user_payload["email"], "password": user_payload["password"]},
+            data={
+                "username": user_payload["email"],
+                "password": user_payload["password"],
+            },
         )
         token = login.json()["access_token"]
 

@@ -5,7 +5,6 @@ from app.infrastructure.database.models import UserModel
 
 
 class AbstractUserRepository(ABC):
-
     @abstractmethod
     async def get_by_id(self, user_id: UUID) -> UserModel | None: ...
 
