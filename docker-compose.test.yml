@@ -1,0 +1,22 @@
+services:
+  backend:
+    environment:
+      DATABASE_URL: postgresql+asyncpg://test:test@db:5432/test_db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+
+  worker:
+    profiles: ["disabled"]
+
+  beat:
+    profiles: ["disabled"]
+
+  frontend:
+    profiles: ["disabled"]
