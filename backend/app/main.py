@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routers import auth
+
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Meeting Room Booking", version="0.1.0")
@@ -12,6 +14,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.include_router(auth.router, prefix="/api")
 
     @app.get("/health", tags=["health"])
     async def health() -> dict:
