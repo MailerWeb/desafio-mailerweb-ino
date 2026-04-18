@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.dependencies import get_current_user
-from app.db.models import User
 from app.db.session import get_db
 from app.modules.rooms.schemas import RoomCreateRequest, RoomResponse
 from app.modules.rooms.service import (
@@ -16,7 +15,11 @@ from app.modules.rooms.service import (
 )
 
 
-router = APIRouter(prefix="/rooms", tags=["rooms"])
+router = APIRouter(
+    prefix="/rooms",
+    tags=["rooms"],
+    dependencies=[Depends(get_current_user)],
+)
 settings = get_settings()
 
 
@@ -29,7 +32,6 @@ def create_room_endpoint(
     payload: RoomCreateRequest,
     response: Response,
     db: Annotated[Session, Depends(get_db)],
-    _: Annotated[User, Depends(get_current_user)],
 ) -> RoomResponse:
     try:
         room = create_room(db, payload)
