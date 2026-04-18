@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.models import Room
@@ -10,11 +10,14 @@ class RoomAlreadyExistsError(Exception):
 
 
 def create_room(db: Session, payload: RoomCreateRequest) -> Room:
-    existing_room = db.scalar(select(Room).where(Room.name == payload.name))
+    normalized_name = payload.name.strip()
+    existing_room = db.scalar(
+        select(Room).where(func.lower(Room.name) == normalized_name.lower()),
+    )
     if existing_room is not None:
         raise RoomAlreadyExistsError("Room name already exists")
 
-    room = Room(name=payload.name, capacity=payload.capacity)
+    room = Room(name=normalized_name, capacity=payload.capacity)
     db.add(room)
     db.commit()
     db.refresh(room)
