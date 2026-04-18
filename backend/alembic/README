@@ -1,1 +1,17 @@
-Generic single-database configuration.
+Alembic configuration for the backend database.
+
+Suggested workflow:
+
+1. Create or update SQLAlchemy models under `app/db/models/`
+2. Generate a migration:
+   `poetry run alembic revision --autogenerate -m "describe_change"`
+3. Apply migrations:
+   `poetry run alembic upgrade head`
+4. Roll back the latest migration if needed:
+   `poetry run alembic downgrade -1`
+
+Notes:
+
+- The database URL is loaded from the project `.env` through `app.core.config`.
+- `app.db.models` is imported in `env.py` so Alembic autogenerate can discover ORM models.
+- Revision files should live under `alembic/versions/`.
