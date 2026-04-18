@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, DateTime, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.db.models.booking import Booking
 
 
 class Room(Base):
@@ -26,3 +32,5 @@ class Room(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    bookings: Mapped[list["Booking"]] = relationship(back_populates="room")
