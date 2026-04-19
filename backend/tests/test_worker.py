@@ -6,16 +6,42 @@ from sqlalchemy.orm import Session
 from app.db.enums import OutboxEventStatus, OutboxEventType
 from app.db.models import OutboxEvent
 from app.db.session import SessionLocal
+from app.worker.mailer import EmailMessage
 from app.worker.processor import OutboxWorker
 
 
-class RecordingWorker(OutboxWorker):
+class RecordingMailer:
     def __init__(self) -> None:
-        super().__init__()
+        self.messages: list[EmailMessage] = []
+
+    def send(self, message: EmailMessage) -> None:
+        self.messages.append(message)
+
+
+class RecordingWorker(OutboxWorker):
+    def __init__(self, mailer: RecordingMailer | None = None) -> None:
+        super().__init__(mailer=mailer)
         self.processed_event_ids: list[int] = []
 
     def process_event(self, db: Session, event: OutboxEvent) -> None:
         self.processed_event_ids.append(event.id)
+
+
+def build_booking_payload(title: str) -> dict:
+    return {
+        "booking_id": 1,
+        "title": title,
+        "room": {"id": 10, "name": "Sala Azul"},
+        "created_by_user_id": 3,
+        "status": "ACTIVE",
+        "start_at": "2026-04-20T10:00:00+00:00",
+        "end_at": "2026-04-20T11:00:00+00:00",
+        "canceled_at": None,
+        "participants": [
+            {"email": "alice@example.com", "full_name": "Alice"},
+            {"email": "bob@example.com", "full_name": "Bob"},
+        ],
+    }
 
 
 def test_worker_fetches_only_eligible_pending_events() -> None:
@@ -131,3 +157,67 @@ def test_run_once_processes_events_in_stable_batch_order() -> None:
         with SessionLocal() as db:
             db.execute(delete(OutboxEvent).where(OutboxEvent.id.in_(created_ids)))
             db.commit()
+
+
+def test_worker_processes_booking_created_event() -> None:
+    mailer = RecordingMailer()
+    worker = OutboxWorker(mailer=mailer)
+    event = OutboxEvent(
+        aggregate_type="booking",
+        aggregate_id=401,
+        event_type=OutboxEventType.BOOKING_CREATED,
+        payload=build_booking_payload("Planning"),
+        status=OutboxEventStatus.PENDING,
+        idempotency_key="process-created",
+    )
+
+    with SessionLocal() as db:
+        worker.process_event(db, event)
+
+    assert len(mailer.messages) == 2
+    assert mailer.messages[0].subject == "Meeting room booking created: Planning"
+    assert mailer.messages[0].to_email == "alice@example.com"
+
+
+def test_worker_processes_booking_updated_event() -> None:
+    mailer = RecordingMailer()
+    worker = OutboxWorker(mailer=mailer)
+    event = OutboxEvent(
+        aggregate_type="booking",
+        aggregate_id=402,
+        event_type=OutboxEventType.BOOKING_UPDATED,
+        payload=build_booking_payload("Planning Updated"),
+        status=OutboxEventStatus.PENDING,
+        idempotency_key="process-updated",
+    )
+
+    with SessionLocal() as db:
+        worker.process_event(db, event)
+
+    assert len(mailer.messages) == 2
+    assert mailer.messages[0].subject == (
+        "Meeting room booking updated: Planning Updated"
+    )
+
+
+def test_worker_processes_booking_canceled_event() -> None:
+    mailer = RecordingMailer()
+    worker = OutboxWorker(mailer=mailer)
+    payload = build_booking_payload("Planning Canceled")
+    payload["canceled_at"] = "2026-04-20T09:00:00+00:00"
+    event = OutboxEvent(
+        aggregate_type="booking",
+        aggregate_id=403,
+        event_type=OutboxEventType.BOOKING_CANCELED,
+        payload=payload,
+        status=OutboxEventStatus.PENDING,
+        idempotency_key="process-canceled",
+    )
+
+    with SessionLocal() as db:
+        worker.process_event(db, event)
+
+    assert len(mailer.messages) == 2
+    assert mailer.messages[0].subject == (
+        "Meeting room booking canceled: Planning Canceled"
+    )

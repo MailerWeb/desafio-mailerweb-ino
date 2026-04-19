@@ -2,24 +2,29 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Any
 
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.db.enums import OutboxEventStatus
+from app.db.enums import OutboxEventStatus, OutboxEventType
 from app.db.models import OutboxEvent
 from app.db.session import SessionLocal
-from app.worker.mailer import build_mailer
+from app.worker.mailer import Mailer, build_mailer
+from app.worker.notifications import (
+    BookingNotificationContext,
+    build_booking_notification_email,
+)
 
 
 logger = logging.getLogger(__name__)
 
 
 class OutboxWorker:
-    def __init__(self) -> None:
+    def __init__(self, mailer: Mailer | None = None) -> None:
         self.settings = get_settings()
-        self.mailer = build_mailer(self.settings)
+        self.mailer = mailer or build_mailer(self.settings)
 
     def run_forever(self) -> None:
         logger.info(
@@ -60,6 +65,56 @@ class OutboxWorker:
             event.aggregate_type,
             event.aggregate_id,
         )
+        if event.aggregate_type != "booking":
+            logger.warning(
+                "Skipping unsupported aggregate type for event id=%s aggregate=%s",
+                event.id,
+                event.aggregate_type,
+            )
+            return
+
+        self._process_booking_event(event)
+
+    def _process_booking_event(self, event: OutboxEvent) -> None:
+        payload = self._validate_booking_payload(event.payload)
+
+        if event.event_type not in {
+            OutboxEventType.BOOKING_CREATED,
+            OutboxEventType.BOOKING_UPDATED,
+            OutboxEventType.BOOKING_CANCELED,
+        }:
+            logger.warning(
+                "Skipping unsupported booking event type for event id=%s type=%s",
+                event.id,
+                event.event_type.value,
+            )
+            return
+
+        for participant in payload["participants"]:
+            message = build_booking_notification_email(
+                BookingNotificationContext(
+                    to_email=participant["email"],
+                    from_email=self.settings.mailer_from_email,
+                    event_type=event.event_type,
+                    title=payload["title"],
+                    room_name=payload["room"]["name"],
+                    start_at=payload["start_at"],
+                    end_at=payload["end_at"],
+                ),
+            )
+            self.mailer.send(message)
+
+    def _validate_booking_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if "title" not in payload:
+            raise ValueError("Booking outbox payload missing title")
+        if "room" not in payload or "name" not in payload["room"]:
+            raise ValueError("Booking outbox payload missing room name")
+        if "start_at" not in payload or "end_at" not in payload:
+            raise ValueError("Booking outbox payload missing schedule")
+        if "participants" not in payload or not isinstance(payload["participants"], list):
+            raise ValueError("Booking outbox payload missing participants")
+
+        return payload
 
     def _pending_events_statement(self) -> Select[tuple[OutboxEvent]]:
         return (
