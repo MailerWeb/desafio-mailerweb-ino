@@ -78,6 +78,8 @@ def _validate_booking_window(start_at: datetime, end_at: datetime) -> None:
     _validate_timezone(start_at, "start_at")
     _validate_timezone(end_at, "end_at")
 
+    if start_at < datetime.now(UTC):
+        raise BookingValidationError("start_at cannot be in the past")
     if start_at >= end_at:
         raise BookingValidationError("start_at must be before end_at")
 

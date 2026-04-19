@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -58,6 +58,8 @@ class BookingBaseRequest(BaseModel):
             raise ValueError("start_at must include timezone")
         if self.end_at.tzinfo is None or self.end_at.utcoffset() is None:
             raise ValueError("end_at must include timezone")
+        if self.start_at < datetime.now(UTC):
+            raise ValueError("start_at cannot be in the past")
         if self.start_at >= self.end_at:
             raise ValueError("start_at must be before end_at")
 

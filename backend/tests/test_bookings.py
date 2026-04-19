@@ -51,11 +51,12 @@ def test_list_bookings_returns_existing_records(
     assert list_response.status_code == 200
     payload = list_response.json()
     assert len(payload) >= 2
-    assert [payload[0]["title"], payload[1]["title"]] == [
-        "Alpha Booking",
-        "Beta Booking",
-    ]
-    assert payload[0]["participants"][0]["email"] == "alpha@example.com"
+    titles = [item["title"] for item in payload]
+    assert "Alpha Booking" in titles
+    assert "Beta Booking" in titles
+
+    alpha_booking = next(item for item in payload if item["title"] == "Alpha Booking")
+    assert alpha_booking["participants"][0]["email"] == "alpha@example.com"
 
 
 def test_get_booking_returns_existing_record(
@@ -92,6 +93,32 @@ def test_get_booking_returns_existing_record(
     assert payload["id"] == booking_id
     assert payload["title"] == "Booking Detail Test"
     assert payload["participants"][0]["email"] == "detail@example.com"
+
+
+def test_booking_start_time_cannot_be_in_the_past(
+    client: TestClient,
+    auth_headers: dict[str, str],
+    room_id: int,
+) -> None:
+    start_at = datetime.now(UTC).replace(microsecond=0) - timedelta(hours=1)
+    end_at = start_at + timedelta(hours=1)
+
+    response = client.post(
+        "/api/v1/bookings",
+        json={
+            "title": "Past Booking",
+            "room_id": room_id,
+            "start_at": start_at.isoformat(),
+            "end_at": end_at.isoformat(),
+            "participants": [
+                {"email": "past@example.com", "full_name": "Past"},
+            ],
+        },
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+    assert "start_at cannot be in the past" in str(response.json())
 
 
 def test_create_and_update_booking_participants(

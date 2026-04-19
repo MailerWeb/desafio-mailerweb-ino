@@ -23,6 +23,14 @@ const emptyParticipant = (): ParticipantFormItem => ({
   full_name: '',
 })
 
+function getCurrentLocalDateTimeInputValue() {
+  const now = new Date()
+  now.setSeconds(0, 0)
+  const offset = now.getTimezoneOffset()
+  const localDate = new Date(now.getTime() - offset * 60_000)
+  return localDate.toISOString().slice(0, 16)
+}
+
 function toLocalDateTimeInputValue(isoDateTime: string) {
   const date = new Date(isoDateTime)
   const offset = date.getTimezoneOffset()
@@ -42,6 +50,8 @@ function translateBookingApiDetail(detail: string) {
       'Reservas canceladas não podem ser editadas.',
     'Room not found': 'A sala selecionada não foi encontrada.',
     'Booking not found': 'A reserva informada não foi encontrada.',
+    'start_at cannot be in the past':
+      'Não é permitido criar ou editar reservas com horário de início no passado.',
     'start_at must be before end_at':
       'O horário de início deve ser anterior ao horário de fim.',
     'Booking duration must be at least 15 minutes':
@@ -54,6 +64,10 @@ function translateBookingApiDetail(detail: string) {
 }
 
 function getBookingFormErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
   if (axios.isAxiosError(error)) {
     const detail = error.response?.data?.detail
 
@@ -84,6 +98,7 @@ export function BookingFormPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const minDateTimeValue = useMemo(() => getCurrentLocalDateTimeInputValue(), [])
 
   useEffect(() => {
     let isMounted = true
@@ -168,6 +183,20 @@ export function BookingFormPage() {
     setIsSubmitting(true)
 
     try {
+      const now = new Date()
+      const parsedStartAt = new Date(startAt)
+      const parsedEndAt = new Date(endAt)
+
+      if (Number.isNaN(parsedStartAt.getTime()) || Number.isNaN(parsedEndAt.getTime())) {
+        throw new Error('Preencha corretamente os horários de início e fim.')
+      }
+
+      if (parsedStartAt < now) {
+        throw new Error(
+          'Não é permitido criar ou editar reservas com horário de início no passado.',
+        )
+      }
+
       const payload: BookingPayload = {
         title: title.trim(),
         room_id: Number(roomId),
@@ -275,6 +304,7 @@ export function BookingFormPage() {
               <input
                 type="datetime-local"
                 value={startAt}
+                min={minDateTimeValue}
                 onChange={(event) => setStartAt(event.target.value)}
                 required
               />
@@ -285,6 +315,7 @@ export function BookingFormPage() {
               <input
                 type="datetime-local"
                 value={endAt}
+                min={minDateTimeValue}
                 onChange={(event) => setEndAt(event.target.value)}
                 required
               />
