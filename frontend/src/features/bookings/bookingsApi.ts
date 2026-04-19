@@ -20,3 +20,8 @@ export async function updateBooking(bookingId: number, payload: BookingPayload) 
   const response = await apiClient.put<Booking>(`/bookings/${bookingId}`, payload)
   return response.data
 }
+
+export async function cancelBooking(bookingId: number) {
+  const response = await apiClient.post<Booking>(`/bookings/${bookingId}/cancel`)
+  return response.data
+}

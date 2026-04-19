@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { Link, useLocation } from 'react-router-dom'
-import { fetchBookings } from '../features/bookings/bookingsApi'
+import { cancelBooking, fetchBookings } from '../features/bookings/bookingsApi'
 import type { Booking } from '../features/bookings/types'
 import { fetchRooms } from '../features/rooms/roomsApi'
 import type { Room } from '../features/rooms/types'
@@ -15,6 +15,17 @@ function getBookingsErrorMessage(error: unknown) {
   }
 
   return 'Não foi possível carregar as reservas no momento.'
+}
+
+function getCancelBookingErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.detail ??
+      'Não foi possível cancelar a reserva no momento.'
+    )
+  }
+
+  return 'Não foi possível cancelar a reserva no momento.'
 }
 
 function formatDateRange(startAt: string, endAt: string) {
@@ -31,8 +42,10 @@ export function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null)
   const [error, setError] = useState('')
-  const successMessage =
+  const [actionFeedback, setActionFeedback] = useState('')
+  const routeSuccessMessage =
     (location.state as { successMessage?: string } | null)?.successMessage ?? ''
 
   useEffect(() => {
@@ -50,8 +63,9 @@ export function BookingsPage() {
         setError(getBookingsErrorMessage(requestError))
       })
       .finally(() => {
-        if (!isMounted) return
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       })
 
     return () => {
@@ -63,6 +77,34 @@ export function BookingsPage() {
     () => new Map(rooms.map((room) => [room.id, room.name])),
     [rooms],
   )
+
+  async function handleCancelBooking(bookingId: number) {
+    const shouldCancel = window.confirm(
+      'Tem certeza de que deseja cancelar esta reserva?',
+    )
+
+    if (!shouldCancel) {
+      return
+    }
+
+    setError('')
+    setActionFeedback('')
+    setCancelingBookingId(bookingId)
+
+    try {
+      const canceledBooking = await cancelBooking(bookingId)
+      setBookings((current) =>
+        current.map((booking) =>
+          booking.id === bookingId ? canceledBooking : booking,
+        ),
+      )
+      setActionFeedback('Reserva cancelada com sucesso.')
+    } catch (cancelError) {
+      setError(getCancelBookingErrorMessage(cancelError))
+    } finally {
+      setCancelingBookingId(null)
+    }
+  }
 
   return (
     <section className="surface-card">
@@ -80,9 +122,9 @@ export function BookingsPage() {
         </Link>
       </div>
 
-      {successMessage ? (
+      {actionFeedback || routeSuccessMessage ? (
         <div className="feedback feedback--success" role="status">
-          {successMessage}
+          {actionFeedback || routeSuccessMessage}
         </div>
       ) : null}
 
@@ -168,6 +210,18 @@ export function BookingsPage() {
                 >
                   Editar reserva
                 </Link>
+                {booking.status === 'ACTIVE' ? (
+                  <button
+                    className="ghost-button ghost-button--compact ghost-button--danger"
+                    type="button"
+                    onClick={() => handleCancelBooking(booking.id)}
+                    disabled={cancelingBookingId === booking.id}
+                  >
+                    {cancelingBookingId === booking.id
+                      ? 'Cancelando...'
+                      : 'Cancelar reserva'}
+                  </button>
+                ) : null}
               </div>
             </article>
           ))}

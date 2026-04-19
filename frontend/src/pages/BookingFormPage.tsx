@@ -34,15 +34,37 @@ function toIsoDateTime(value: string) {
   return new Date(value).toISOString()
 }
 
-function getBookingFormErrorMessage(error: unknown) {
-  if (axios.isAxiosError(error)) {
-    return (
-      error.response?.data?.detail ??
-      'Nao foi possivel salvar a reserva no momento.'
-    )
+function translateBookingApiDetail(detail: string) {
+  const translations: Record<string, string> = {
+    'Booking time conflicts with an existing booking':
+      'Já existe uma reserva ativa nessa sala para o intervalo informado.',
+    'Canceled bookings cannot be edited':
+      'Reservas canceladas não podem ser editadas.',
+    'Room not found': 'A sala selecionada não foi encontrada.',
+    'Booking not found': 'A reserva informada não foi encontrada.',
+    'start_at must be before end_at':
+      'O horário de início deve ser anterior ao horário de fim.',
+    'Booking duration must be at least 15 minutes':
+      'A reserva deve ter pelo menos 15 minutos de duração.',
+    'Booking duration must be at most 8 hours':
+      'A reserva deve ter no máximo 8 horas de duração.',
   }
 
-  return 'Nao foi possivel salvar a reserva no momento.'
+  return translations[detail] ?? detail
+}
+
+function getBookingFormErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    const detail = error.response?.data?.detail
+
+    if (typeof detail === 'string' && detail.trim()) {
+      return translateBookingApiDetail(detail)
+    }
+
+    return 'Não foi possível salvar a reserva no momento.'
+  }
+
+  return 'Não foi possível salvar a reserva no momento.'
 }
 
 export function BookingFormPage() {
@@ -187,8 +209,8 @@ export function BookingFormPage() {
             {isEditing ? 'Atualize a reserva' : 'Crie uma nova reserva'}
           </h2>
           <p className="section-copy">
-            Escolha a sala, defina a janela de horario e adicione os
-            participantes da reuniao.
+            Escolha a sala, defina a janela de horário e adicione os
+            participantes da reunião.
           </p>
         </div>
         <Link className="ghost-button" to="/bookings">
@@ -198,7 +220,7 @@ export function BookingFormPage() {
 
       {isLoading ? (
         <div className="state-card" aria-live="polite">
-          <strong>Carregando formulario...</strong>
+          <strong>Carregando formulário...</strong>
           <p>Estamos preparando os dados da reserva e a lista de salas.</p>
         </div>
       ) : null}
@@ -206,7 +228,7 @@ export function BookingFormPage() {
       {!isLoading ? (
         <form className="booking-form" onSubmit={handleSubmit}>
           <label className="field">
-            <span>Titulo</span>
+            <span>Título</span>
             <input
               type="text"
               placeholder="Ex.: Planejamento semanal"
@@ -241,7 +263,7 @@ export function BookingFormPage() {
               <strong>{selectedRoom?.name ?? 'Nenhuma sala selecionada'}</strong>
               <small>
                 {selectedRoom
-                  ? `${selectedRoom.capacity} lugares disponiveis`
+                  ? `${selectedRoom.capacity} lugares disponíveis`
                   : 'Selecione uma sala para continuar.'}
               </small>
             </div>
@@ -249,7 +271,7 @@ export function BookingFormPage() {
 
           <div className="form-grid">
             <label className="field">
-              <span>Inicio</span>
+              <span>Início</span>
               <input
                 type="datetime-local"
                 value={startAt}
@@ -273,7 +295,7 @@ export function BookingFormPage() {
             <div className="participants-header">
               <div>
                 <h3>Participantes</h3>
-                <p>Adicione pelo menos um participante com e-mail valido.</p>
+                <p>Adicione pelo menos um participante com e-mail válido.</p>
               </div>
               <button
                 className="ghost-button"
@@ -339,7 +361,7 @@ export function BookingFormPage() {
               {isSubmitting
                 ? 'Salvando...'
                 : isEditing
-                  ? 'Salvar alteracoes'
+                  ? 'Salvar alterações'
                   : 'Criar reserva'}
             </button>
           </div>
