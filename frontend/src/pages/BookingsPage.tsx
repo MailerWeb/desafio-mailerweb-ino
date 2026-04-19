@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
+import { Link, useLocation } from 'react-router-dom'
 import { fetchBookings } from '../features/bookings/bookingsApi'
 import type { Booking } from '../features/bookings/types'
 import { fetchRooms } from '../features/rooms/roomsApi'
@@ -9,11 +10,11 @@ function getBookingsErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
     return (
       error.response?.data?.detail ??
-      'Nao foi possivel carregar as reservas no momento.'
+      'Não foi possível carregar as reservas no momento.'
     )
   }
 
-  return 'Nao foi possivel carregar as reservas no momento.'
+  return 'Não foi possível carregar as reservas no momento.'
 }
 
 function formatDateRange(startAt: string, endAt: string) {
@@ -26,10 +27,13 @@ function formatDateRange(startAt: string, endAt: string) {
 }
 
 export function BookingsPage() {
+  const location = useLocation()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const successMessage =
+    (location.state as { successMessage?: string } | null)?.successMessage ?? ''
 
   useEffect(() => {
     let isMounted = true
@@ -67,11 +71,20 @@ export function BookingsPage() {
           <div className="status-chip">Reservas</div>
           <h2 className="section-title">Agenda das reservas</h2>
           <p className="section-copy">
-            Veja as reunioes cadastradas, seus horarios, participantes e o
+            Veja as reuniões cadastradas, seus horários, participantes e o
             status atual de cada reserva.
           </p>
         </div>
+        <Link className="primary-button primary-button--inline" to="/bookings/new">
+          Nova reserva
+        </Link>
       </div>
+
+      {successMessage ? (
+        <div className="feedback feedback--success" role="status">
+          {successMessage}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="state-card" aria-live="polite">
@@ -90,8 +103,8 @@ export function BookingsPage() {
         <div className="state-card">
           <strong>Nenhuma reserva cadastrada</strong>
           <p>
-            Quando as reservas forem criadas, elas vao aparecer aqui com sala,
-            horario e participantes.
+            Quando as reservas forem criadas, elas vão aparecer aqui com sala,
+            horário e participantes.
           </p>
         </div>
       ) : null}
@@ -132,10 +145,10 @@ export function BookingsPage() {
                 </div>
                 <div>
                   <dt>Criado por</dt>
-                  <dd>Usuario #{booking.created_by_user_id}</dd>
+                  <dd>Usuário #{booking.created_by_user_id}</dd>
                 </div>
                 <div>
-                  <dt>Ultima atualizacao</dt>
+                  <dt>Última atualização</dt>
                   <dd>{new Date(booking.updated_at).toLocaleString('pt-BR')}</dd>
                 </div>
               </dl>
@@ -146,6 +159,15 @@ export function BookingsPage() {
                     {participant.full_name ?? participant.email}
                   </span>
                 ))}
+              </div>
+
+              <div className="booking-actions">
+                <Link
+                  className="ghost-button ghost-button--compact"
+                  to={`/bookings/${booking.id}/edit`}
+                >
+                  Editar reserva
+                </Link>
               </div>
             </article>
           ))}

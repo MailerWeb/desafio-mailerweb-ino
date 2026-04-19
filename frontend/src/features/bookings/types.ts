@@ -18,3 +18,16 @@ export type Booking = {
   updated_at: string
   participants: BookingParticipant[]
 }
+
+export type BookingParticipantInput = {
+  email: string
+  full_name: string | null
+}
+
+export type BookingPayload = {
+  title: string
+  room_id: number
+  start_at: string
+  end_at: string
+  participants: BookingParticipantInput[]
+}
