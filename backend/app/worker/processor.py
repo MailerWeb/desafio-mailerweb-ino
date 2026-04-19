@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 import time
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import Select, func, or_, select
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.enums import OutboxEventStatus
@@ -29,19 +30,32 @@ class OutboxWorker:
             time.sleep(self.settings.worker_poll_interval_seconds)
 
     def run_once(self) -> int:
-        pending_events = self._count_pending_events()
-        logger.info("Outbox worker found %s pending event(s)", pending_events)
-        return pending_events
-
-    def _count_pending_events(self) -> int:
         with SessionLocal() as db:
-            statement = select(func.count(OutboxEvent.id)).where(
+            pending_events = self._fetch_pending_events(db)
+
+        logger.info(
+            "Outbox worker fetched %s pending event(s): %s",
+            len(pending_events),
+            [event.id for event in pending_events],
+        )
+        return len(pending_events)
+
+    def _pending_events_statement(self) -> Select[tuple[OutboxEvent]]:
+        return (
+            select(OutboxEvent)
+            .where(
                 OutboxEvent.status == OutboxEventStatus.PENDING,
+                OutboxEvent.attempts < self.settings.outbox_max_attempts,
                 or_(
                     OutboxEvent.next_retry_at.is_(None),
                     OutboxEvent.next_retry_at <= func.now(),
                 ),
             )
-            count = db.scalar(statement)
+            .order_by(OutboxEvent.created_at.asc(), OutboxEvent.id.asc())
+            .limit(self.settings.worker_batch_size)
+            .with_for_update(skip_locked=True)
+        )
 
-        return int(count or 0)
+    def _fetch_pending_events(self, db: Session) -> list[OutboxEvent]:
+        statement = self._pending_events_statement()
+        return list(db.scalars(statement).all())
