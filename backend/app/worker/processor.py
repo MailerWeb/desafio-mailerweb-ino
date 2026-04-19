@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import logging
 import time
 from typing import Any
@@ -74,6 +75,9 @@ class OutboxWorker:
             return
 
         self._process_booking_event(event)
+        event.status = OutboxEventStatus.PROCESSED
+        event.processed_at = datetime.now(UTC)
+        logger.info("Outbox event id=%s marked as PROCESSED", event.id)
 
     def _process_booking_event(self, event: OutboxEvent) -> None:
         payload = self._validate_booking_payload(event.payload)

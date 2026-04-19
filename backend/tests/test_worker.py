@@ -177,6 +177,8 @@ def test_worker_processes_booking_created_event() -> None:
     assert len(mailer.messages) == 2
     assert mailer.messages[0].subject == "Meeting room booking created: Planning"
     assert mailer.messages[0].to_email == "alice@example.com"
+    assert event.status == OutboxEventStatus.PROCESSED
+    assert event.processed_at is not None
 
 
 def test_worker_processes_booking_updated_event() -> None:
@@ -198,6 +200,8 @@ def test_worker_processes_booking_updated_event() -> None:
     assert mailer.messages[0].subject == (
         "Meeting room booking updated: Planning Updated"
     )
+    assert event.status == OutboxEventStatus.PROCESSED
+    assert event.processed_at is not None
 
 
 def test_worker_processes_booking_canceled_event() -> None:
@@ -221,3 +225,5 @@ def test_worker_processes_booking_canceled_event() -> None:
     assert mailer.messages[0].subject == (
         "Meeting room booking canceled: Planning Canceled"
     )
+    assert event.status == OutboxEventStatus.PROCESSED
+    assert event.processed_at is not None
