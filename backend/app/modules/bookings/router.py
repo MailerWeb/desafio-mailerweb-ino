@@ -20,6 +20,7 @@ from app.modules.bookings.service import (
     RoomNotFoundError,
     cancel_booking,
     create_booking,
+    get_booking_by_id,
     list_bookings,
     update_booking,
 )
@@ -36,6 +37,20 @@ def list_bookings_endpoint(
 ) -> list[BookingResponse]:
     bookings = list_bookings(db)
     return [BookingResponse.model_validate(booking) for booking in bookings]
+
+
+@router.get("/{booking_id}", response_model=BookingResponse)
+def get_booking_endpoint(
+    booking_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_user)],
+) -> BookingResponse:
+    try:
+        booking = get_booking_by_id(db, booking_id)
+    except BookingNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    return BookingResponse.model_validate(booking)
 
 
 @router.post(

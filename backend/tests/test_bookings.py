@@ -58,6 +58,42 @@ def test_list_bookings_returns_existing_records(
     assert payload[0]["participants"][0]["email"] == "alpha@example.com"
 
 
+def test_get_booking_returns_existing_record(
+    client: TestClient,
+    auth_headers: dict[str, str],
+    room_id: int,
+) -> None:
+    start_at = datetime.now(UTC).replace(microsecond=0) + timedelta(days=1)
+    end_at = start_at + timedelta(hours=1)
+
+    create_response = client.post(
+        "/api/v1/bookings",
+        json={
+            "title": "Booking Detail Test",
+            "room_id": room_id,
+            "start_at": start_at.isoformat(),
+            "end_at": end_at.isoformat(),
+            "participants": [
+                {"email": "detail@example.com", "full_name": "Detail"},
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert create_response.status_code == 201
+
+    booking_id = create_response.json()["id"]
+    detail_response = client.get(
+        f"/api/v1/bookings/{booking_id}",
+        headers=auth_headers,
+    )
+
+    assert detail_response.status_code == 200
+    payload = detail_response.json()
+    assert payload["id"] == booking_id
+    assert payload["title"] == "Booking Detail Test"
+    assert payload["participants"][0]["email"] == "detail@example.com"
+
+
 def test_create_and_update_booking_participants(
     client: TestClient,
     auth_headers: dict[str, str],

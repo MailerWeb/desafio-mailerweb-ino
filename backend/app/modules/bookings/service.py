@@ -148,6 +148,10 @@ def list_bookings(db: Session) -> list[Booking]:
     )
 
 
+def get_booking_by_id(db: Session, booking_id: int) -> Booking:
+    return _get_booking_or_raise(db, booking_id)
+
+
 def _build_outbox_payload(booking: Booking, room: Room) -> dict:
     return {
         "booking_id": booking.id,
