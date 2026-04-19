@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import logging
 import time
 from typing import Any
@@ -41,19 +41,25 @@ class OutboxWorker:
         with SessionLocal() as db:
             pending_events = self._fetch_pending_events(db)
             processed_count = 0
+            failed_count = 0
 
             try:
                 for event in pending_events:
-                    self.process_event(db, event)
-                    processed_count += 1
+                    try:
+                        self.process_event(db, event)
+                        processed_count += 1
+                    except Exception as exc:
+                        self._handle_processing_failure(event, exc)
+                        failed_count += 1
                 db.commit()
             except Exception:
                 db.rollback()
                 raise
 
         logger.info(
-            "Outbox worker processed %s pending event(s): %s",
+            "Outbox worker processed %s pending event(s) and failed %s: %s",
             processed_count,
+            failed_count,
             [event.id for event in pending_events],
         )
         return processed_count
@@ -77,7 +83,40 @@ class OutboxWorker:
         self._process_booking_event(event)
         event.status = OutboxEventStatus.PROCESSED
         event.processed_at = datetime.now(UTC)
+        event.next_retry_at = None
+        event.last_error = None
         logger.info("Outbox event id=%s marked as PROCESSED", event.id)
+
+    def _handle_processing_failure(
+        self,
+        event: OutboxEvent,
+        error: Exception,
+    ) -> None:
+        event.attempts += 1
+        event.last_error = str(error)
+        event.processed_at = None
+
+        if event.attempts >= self.settings.outbox_max_attempts:
+            event.status = OutboxEventStatus.FAILED
+            event.next_retry_at = None
+            logger.exception(
+                "Outbox event id=%s marked as FAILED after %s attempt(s)",
+                event.id,
+                event.attempts,
+                exc_info=error,
+            )
+            return
+
+        event.status = OutboxEventStatus.PENDING
+        event.next_retry_at = datetime.now(UTC) + timedelta(
+            seconds=self.settings.outbox_retry_delay_seconds,
+        )
+        logger.exception(
+            "Outbox event id=%s failed on attempt %s; scheduled retry",
+            event.id,
+            event.attempts,
+            exc_info=error,
+        )
 
     def _process_booking_event(self, event: OutboxEvent) -> None:
         payload = self._validate_booking_payload(event.payload)

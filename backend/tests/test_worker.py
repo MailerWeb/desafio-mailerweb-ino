@@ -18,6 +18,14 @@ class RecordingMailer:
         self.messages.append(message)
 
 
+class FailingMailer:
+    def __init__(self, error_message: str = "mailer failure") -> None:
+        self.error_message = error_message
+
+    def send(self, message: EmailMessage) -> None:
+        raise RuntimeError(self.error_message)
+
+
 class RecordingWorker(OutboxWorker):
     def __init__(self, mailer: RecordingMailer | None = None) -> None:
         super().__init__(mailer=mailer)
@@ -227,3 +235,76 @@ def test_worker_processes_booking_canceled_event() -> None:
     )
     assert event.status == OutboxEventStatus.PROCESSED
     assert event.processed_at is not None
+
+
+def test_worker_retries_failed_event_and_persists_error_state() -> None:
+    worker = OutboxWorker(mailer=FailingMailer("temporary mailer error"))
+    created_ids: list[int] = []
+
+    with SessionLocal() as db:
+        event = OutboxEvent(
+            aggregate_type="booking",
+            aggregate_id=501,
+            event_type=OutboxEventType.BOOKING_CREATED,
+            payload=build_booking_payload("Retry Booking"),
+            status=OutboxEventStatus.PENDING,
+            idempotency_key="retry-event",
+        )
+        db.add(event)
+        db.commit()
+        created_ids.append(event.id)
+
+    try:
+        processed_count = worker.run_once()
+        assert processed_count == 0
+
+        with SessionLocal() as db:
+            refreshed_event = db.get(OutboxEvent, event.id)
+
+        assert refreshed_event is not None
+        assert refreshed_event.status == OutboxEventStatus.PENDING
+        assert refreshed_event.attempts == 1
+        assert refreshed_event.last_error == "temporary mailer error"
+        assert refreshed_event.processed_at is None
+        assert refreshed_event.next_retry_at is not None
+    finally:
+        with SessionLocal() as db:
+            db.execute(delete(OutboxEvent).where(OutboxEvent.id.in_(created_ids)))
+            db.commit()
+
+
+def test_worker_marks_event_failed_after_max_attempts() -> None:
+    worker = OutboxWorker(mailer=FailingMailer("permanent mailer error"))
+    created_ids: list[int] = []
+
+    with SessionLocal() as db:
+        event = OutboxEvent(
+            aggregate_type="booking",
+            aggregate_id=502,
+            event_type=OutboxEventType.BOOKING_CREATED,
+            payload=build_booking_payload("Fail Booking"),
+            status=OutboxEventStatus.PENDING,
+            attempts=worker.settings.outbox_max_attempts - 1,
+            idempotency_key="failed-event",
+        )
+        db.add(event)
+        db.commit()
+        created_ids.append(event.id)
+
+    try:
+        processed_count = worker.run_once()
+        assert processed_count == 0
+
+        with SessionLocal() as db:
+            refreshed_event = db.get(OutboxEvent, event.id)
+
+        assert refreshed_event is not None
+        assert refreshed_event.status == OutboxEventStatus.FAILED
+        assert refreshed_event.attempts == worker.settings.outbox_max_attempts
+        assert refreshed_event.last_error == "permanent mailer error"
+        assert refreshed_event.processed_at is None
+        assert refreshed_event.next_retry_at is None
+    finally:
+        with SessionLocal() as db:
+            db.execute(delete(OutboxEvent).where(OutboxEvent.id.in_(created_ids)))
+            db.commit()
