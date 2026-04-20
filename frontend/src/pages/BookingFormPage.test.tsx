@@ -1,19 +1,12 @@
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { BookingFormPage } from './BookingFormPage'
+import { BookingsPage } from './BookingsPage'
 import { renderWithRouter } from '../test/renderWithRouter'
 import * as bookingsApi from '../features/bookings/bookingsApi'
 import * as roomsApi from '../features/rooms/roomsApi'
-
-function SuccessProbe() {
-  const location = useLocation()
-  const successMessage =
-    (location.state as { successMessage?: string } | null)?.successMessage ?? ''
-
-  return <div>{successMessage || 'Sem mensagem'}</div>
-}
 
 function formatLocalInput(date: Date) {
   const offset = date.getTimezoneOffset()
@@ -32,6 +25,7 @@ describe('BookingFormPage', () => {
         updated_at: '2026-01-01T12:00:00Z',
       },
     ])
+    vi.spyOn(bookingsApi, 'fetchBookings').mockResolvedValue([])
   })
 
   it('cria uma reserva com dados válidos', async () => {
@@ -66,7 +60,7 @@ describe('BookingFormPage', () => {
     renderWithRouter(
       <Routes>
         <Route path="/bookings/new" element={<BookingFormPage />} />
-        <Route path="/bookings" element={<SuccessProbe />} />
+        <Route path="/bookings" element={<BookingsPage />} />
       </Routes>,
       { route: '/bookings/new' },
     )
@@ -110,7 +104,7 @@ describe('BookingFormPage', () => {
     renderWithRouter(
       <Routes>
         <Route path="/bookings/new" element={<BookingFormPage />} />
-        <Route path="/bookings" element={<SuccessProbe />} />
+        <Route path="/bookings" element={<BookingsPage />} />
       </Routes>,
       { route: '/bookings/new' },
     )
@@ -145,7 +139,7 @@ describe('BookingFormPage', () => {
     renderWithRouter(
       <Routes>
         <Route path="/bookings/new" element={<BookingFormPage />} />
-        <Route path="/bookings" element={<SuccessProbe />} />
+        <Route path="/bookings" element={<BookingsPage />} />
       </Routes>,
       { route: '/bookings/new' },
     )

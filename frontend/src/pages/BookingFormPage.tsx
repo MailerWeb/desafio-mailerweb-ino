@@ -64,10 +64,6 @@ function translateBookingApiDetail(detail: string) {
 }
 
 function getBookingFormErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message
-  }
-
   if (axios.isAxiosError(error)) {
     const detail = error.response?.data?.detail
 
@@ -75,7 +71,15 @@ function getBookingFormErrorMessage(error: unknown) {
       return translateBookingApiDetail(detail)
     }
 
+    if (error.message.trim()) {
+      return error.message
+    }
+
     return 'Não foi possível salvar a reserva no momento.'
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
   }
 
   return 'Não foi possível salvar a reserva no momento.'

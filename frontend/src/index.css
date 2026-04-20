@@ -67,3 +67,28 @@
     text-decoration: none;
   }
 }
+
+@layer utilities {
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .animate-page-enter {
+    animation: page-enter 180ms ease-out;
+    will-change: opacity, transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-page-enter {
+      animation: none;
+    }
+  }
+}

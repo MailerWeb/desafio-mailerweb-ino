@@ -1,7 +1,8 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
 
 export function AppLayout() {
+  const location = useLocation()
   const { user, logout } = useAuth()
 
   function getNavClassName(isActive: boolean) {
@@ -68,7 +69,10 @@ export function AppLayout() {
         </div>
       </header>
 
-      <section className="mx-auto mt-4 w-full max-w-6xl">
+      <section
+        key={location.pathname}
+        className="animate-page-enter mx-auto mt-4 w-full max-w-6xl"
+      >
         <Outlet />
       </section>
     </main>

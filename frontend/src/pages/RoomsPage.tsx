@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import axios from 'axios'
 import { createRoom, fetchRooms } from '../features/rooms/roomsApi'
 import type { Room } from '../features/rooms/types'
+import { useToast } from '../features/feedback/useToast'
 
 function getRoomsErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -37,11 +38,10 @@ function sortRoomsByName(items: Room[]) {
 }
 
 export function RoomsPage() {
+  const { showToast } = useToast()
   const [rooms, setRooms] = useState<Room[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
-  const [createError, setCreateError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [name, setName] = useState('')
   const [capacity, setCapacity] = useState('8')
@@ -72,8 +72,6 @@ export function RoomsPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSubmitting(true)
-    setCreateError('')
-    setSuccessMessage('')
 
     try {
       const createdRoom = await createRoom({
@@ -84,9 +82,15 @@ export function RoomsPage() {
       setRooms((currentRooms) => sortRoomsByName([...currentRooms, createdRoom]))
       setName('')
       setCapacity('8')
-      setSuccessMessage('Sala criada com sucesso.')
+      showToast({
+        type: 'success',
+        message: 'Sala criada com sucesso.',
+      })
     } catch (submitError) {
-      setCreateError(getCreateRoomErrorMessage(submitError))
+      showToast({
+        type: 'error',
+        message: getCreateRoomErrorMessage(submitError),
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -152,24 +156,6 @@ export function RoomsPage() {
           </button>
         </div>
       </form>
-
-      {createError ? (
-        <div
-          className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          role="alert"
-        >
-          {createError}
-        </div>
-      ) : null}
-
-      {successMessage ? (
-        <div
-          className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
-          role="status"
-        >
-          {successMessage}
-        </div>
-      ) : null}
 
       {isLoading ? (
         <div

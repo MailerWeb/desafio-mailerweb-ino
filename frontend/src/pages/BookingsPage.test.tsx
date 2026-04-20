@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { BookingsPage } from './BookingsPage'
 import { renderWithRouter } from '../test/renderWithRouter'
@@ -46,5 +47,56 @@ describe('BookingsPage', () => {
     expect(screen.getByText('Sala Atlas')).toBeInTheDocument()
     expect(screen.getByText('Alice')).toBeInTheDocument()
     expect(screen.getByText('Ativa')).toBeInTheDocument()
+  })
+
+  it('cancela uma reserva e mostra toast de sucesso', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.spyOn(bookingsApi, 'fetchBookings').mockResolvedValue([
+      {
+        id: 10,
+        title: 'Daily de produto',
+        room_id: 1,
+        created_by_user_id: 7,
+        start_at: '2026-05-10T13:00:00Z',
+        end_at: '2026-05-10T14:00:00Z',
+        status: 'ACTIVE',
+        canceled_at: null,
+        created_at: '2026-05-01T10:00:00Z',
+        updated_at: '2026-05-01T10:00:00Z',
+        participants: [],
+      },
+    ])
+    vi.spyOn(roomsApi, 'fetchRooms').mockResolvedValue([
+      {
+        id: 1,
+        name: 'Sala Atlas',
+        capacity: 8,
+        created_at: '2026-01-01T12:00:00Z',
+        updated_at: '2026-01-01T12:00:00Z',
+      },
+    ])
+    vi.spyOn(bookingsApi, 'cancelBooking').mockResolvedValue({
+      id: 10,
+      title: 'Daily de produto',
+      room_id: 1,
+      created_by_user_id: 7,
+      start_at: '2026-05-10T13:00:00Z',
+      end_at: '2026-05-10T14:00:00Z',
+      status: 'CANCELED',
+      canceled_at: '2026-05-01T12:00:00Z',
+      created_at: '2026-05-01T10:00:00Z',
+      updated_at: '2026-05-01T12:00:00Z',
+      participants: [],
+    })
+
+    const user = userEvent.setup()
+
+    renderWithRouter(<BookingsPage />, { route: '/bookings' })
+
+    await screen.findByText('Daily de produto')
+    await user.click(screen.getByRole('button', { name: /cancelar reserva/i }))
+
+    await screen.findByText('Reserva cancelada com sucesso.')
+    expect(screen.getByText('Cancelada')).toBeInTheDocument()
   })
 })

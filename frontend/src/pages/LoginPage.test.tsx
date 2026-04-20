@@ -55,4 +55,34 @@ describe('LoginPage', () => {
       ).toContain('admin@example.com')
     })
   })
+
+  it('mostra toast quando o login falha', async () => {
+    vi.spyOn(authApi, 'loginRequest').mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        data: {
+          detail: 'Credenciais inválidas.',
+        },
+      },
+    })
+
+    const user = userEvent.setup()
+
+    renderWithRouter(
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<div>Página inicial</div>} />
+        </Routes>
+      </AuthProvider>,
+      { route: '/login' },
+    )
+
+    await user.type(screen.getByLabelText(/e-mail/i), 'admin@example.com')
+    await user.type(screen.getByLabelText(/senha/i), 'senha-errada')
+    await user.click(screen.getByRole('button', { name: /entrar/i }))
+
+    await screen.findByRole('alert')
+    expect(screen.getByText('Credenciais inválidas.')).toBeInTheDocument()
+  })
 })

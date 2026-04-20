@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { AuthProvider } from './features/auth/AuthContext'
+import { ToastProvider } from './features/feedback/ToastProvider'
 import * as authApi from './features/auth/authApi'
 import * as bookingsApi from './features/bookings/bookingsApi'
 import * as roomsApi from './features/rooms/roomsApi'
@@ -36,7 +37,9 @@ describe('App integration flow', () => {
     render(
       <MemoryRouter initialEntries={['/login']}>
         <AuthProvider>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </AuthProvider>
       </MemoryRouter>,
     )

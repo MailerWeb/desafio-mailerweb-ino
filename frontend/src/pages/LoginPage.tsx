@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../features/auth/useAuth'
+import { useToast } from '../features/feedback/useToast'
 
 type LocationState = {
   from?: {
@@ -12,10 +13,10 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, login } = useAuth()
+  const { showToast } = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
 
   const redirectTo =
     (location.state as LocationState | null)?.from?.pathname || '/'
@@ -27,7 +28,6 @@ export function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSubmitting(true)
-    setError('')
 
     try {
       await login({
@@ -36,11 +36,13 @@ export function LoginPage() {
       })
       navigate(redirectTo, { replace: true })
     } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : 'Nao foi possivel entrar.',
-      )
+      showToast({
+        type: 'error',
+        message:
+          submitError instanceof Error
+            ? submitError.message
+            : 'Não foi possível entrar.',
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -87,15 +89,6 @@ export function LoginPage() {
               required
             />
           </label>
-
-          {error ? (
-            <div
-              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-              role="alert"
-            >
-              {error}
-            </div>
-          ) : null}
 
           <button
             className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-app-strong px-4 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-65"

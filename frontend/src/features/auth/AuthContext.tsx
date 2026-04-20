@@ -21,11 +21,11 @@ function getErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
     return (
       error.response?.data?.detail ??
-      'Nao foi possivel fazer login. Tente novamente.'
+      'Não foi possível fazer login. Tente novamente.'
     )
   }
 
-  return 'Nao foi possivel fazer login. Tente novamente.'
+  return 'Não foi possível fazer login. Tente novamente.'
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {

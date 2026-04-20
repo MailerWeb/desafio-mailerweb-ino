@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cancelBooking, fetchBookings } from '../features/bookings/bookingsApi'
 import type { Booking } from '../features/bookings/types'
 import { fetchRooms } from '../features/rooms/roomsApi'
 import type { Room } from '../features/rooms/types'
+import { useToast } from '../features/feedback/useToast'
 
 function getBookingsErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -38,13 +39,14 @@ function formatDateRange(startAt: string, endAt: string) {
 }
 
 export function BookingsPage() {
+  const navigate = useNavigate()
   const location = useLocation()
+  const { showToast } = useToast()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null)
-  const [error, setError] = useState('')
-  const [actionFeedback, setActionFeedback] = useState('')
+  const [loadError, setLoadError] = useState('')
   const routeSuccessMessage =
     (location.state as { successMessage?: string } | null)?.successMessage ?? ''
 
@@ -56,11 +58,11 @@ export function BookingsPage() {
         if (!isMounted) return
         setBookings(bookingsResponse)
         setRooms(roomsResponse)
-        setError('')
+        setLoadError('')
       })
       .catch((requestError) => {
         if (!isMounted) return
-        setError(getBookingsErrorMessage(requestError))
+        setLoadError(getBookingsErrorMessage(requestError))
       })
       .finally(() => {
         if (isMounted) {
@@ -72,6 +74,24 @@ export function BookingsPage() {
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!routeSuccessMessage) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      showToast({
+        type: 'success',
+        message: routeSuccessMessage,
+      })
+      navigate(location.pathname, { replace: true })
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [location.pathname, navigate, routeSuccessMessage, showToast])
 
   const roomNameById = useMemo(
     () => new Map(rooms.map((room) => [room.id, room.name])),
@@ -87,8 +107,6 @@ export function BookingsPage() {
       return
     }
 
-    setError('')
-    setActionFeedback('')
     setCancelingBookingId(bookingId)
 
     try {
@@ -98,9 +116,15 @@ export function BookingsPage() {
           booking.id === bookingId ? canceledBooking : booking,
         ),
       )
-      setActionFeedback('Reserva cancelada com sucesso.')
+      showToast({
+        type: 'success',
+        message: 'Reserva cancelada com sucesso.',
+      })
     } catch (cancelError) {
-      setError(getCancelBookingErrorMessage(cancelError))
+      showToast({
+        type: 'error',
+        message: getCancelBookingErrorMessage(cancelError),
+      })
     } finally {
       setCancelingBookingId(null)
     }
@@ -129,15 +153,6 @@ export function BookingsPage() {
         </Link>
       </div>
 
-      {actionFeedback || routeSuccessMessage ? (
-        <div
-          className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
-          role="status"
-        >
-          {actionFeedback || routeSuccessMessage}
-        </div>
-      ) : null}
-
       {isLoading ? (
         <div
           className="mt-4 rounded-2xl border border-app-border bg-app-muted/80 p-4"
@@ -152,16 +167,16 @@ export function BookingsPage() {
         </div>
       ) : null}
 
-      {!isLoading && error ? (
+      {!isLoading && loadError ? (
         <div
           className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
           role="alert"
         >
-          {error}
+          {loadError}
         </div>
       ) : null}
 
-      {!isLoading && !error && bookings.length === 0 ? (
+      {!isLoading && !loadError && bookings.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-app-border bg-app-muted/80 p-4">
           <strong className="block text-sm font-medium text-app-strong">
             Nenhuma reserva cadastrada
@@ -173,7 +188,7 @@ export function BookingsPage() {
         </div>
       ) : null}
 
-      {!isLoading && !error && bookings.length > 0 ? (
+      {!isLoading && !loadError && bookings.length > 0 ? (
         <div className="mt-6 grid gap-4">
           {bookings.map((booking) => (
             <article
