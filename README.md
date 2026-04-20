@@ -40,7 +40,7 @@ O projeto foi dividido em:
 - bloqueio de conflito de horários por regra de negócio e por proteção no PostgreSQL
 - criação de eventos no outbox na mesma transação da reserva
 - worker separado com retry, persistência de erro e idempotência
-- frontend consumindo a API real
+- frontend consumindo a API real, com login, criação de salas e gestão de reservas
 - testes de backend e frontend
 
 ## Como rodar com Docker

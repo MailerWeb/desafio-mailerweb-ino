@@ -5,3 +5,8 @@ export type Room = {
   created_at: string
   updated_at: string
 }
+
+export type CreateRoomPayload = {
+  name: string
+  capacity: number
+}
